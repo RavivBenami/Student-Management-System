@@ -1,0 +1,123 @@
+<html>
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="design.css" />
+  </head>
+
+  <body onload="pageLoad()" align="center">
+    <div class="header">
+      <a class="logo">Students</a>
+      <div class="header-left">
+        <a href="mainPage.html">Back</a>
+      </div>
+    </div>
+    <br />
+
+    <div id="noData"></div>
+
+    <table border="1" id="tbl" align="center">
+      <tr>
+        <th>grade</th>
+        <th>date</th>
+      </tr>
+    </table>
+    <br />
+
+    <div class="l-form">
+      <div class="form">
+        <h1 class="form-title">Create new grade</h1>
+        <div class="form-div">
+          Grade:<br>
+           <input type="text" id="gradeLbl" class="form-input"/>
+         </div>
+         <div class="form-div">
+          Date:<br>
+           <input type="date" id="dateLbl" class="form-input"/>
+         </div>
+         <br>
+         <input type="button" value="create new grade" onclick="createGrade()" class="btn btn-class" />
+      </div>
+    </div>
+
+    <script>
+      var id = sessionStorage.getItem("id");
+
+      async function pageLoad() {
+        var tbl = document.getElementById("tbl");
+
+        var resp = await fetch(`http://localhost:8000/students/${id}`);
+        if (resp.ok) {
+          var data = await resp.json();
+          console.log(data);
+          if (data.grades.length == 0) {
+            document.getElementById("noData").innerHTML =
+              "There is no grades for this person";
+            tbl.style.visibility = "hidden";
+          } 
+          else {
+            data.grades.forEach((element) => {
+              console.log(element);
+              var tr = document.createElement("tr");
+              var input = document.createElement("input");
+              var td1 = document.createElement("td");
+              var td2 = document.createElement("td");
+              input.value = element.grade;
+              input.className = "input-grade"
+              input.onblur = () => {
+                changeGrade(element._id, input.value);
+              };
+              td1.appendChild(input);
+              td2.innerHTML = element.date.slice(0, 10);
+              tr.append(td1, td2);
+              tbl.appendChild(tr);
+            });
+          }
+        }
+      }
+      async function changeGrade(gradeId, inputValue) {
+        var data;
+        var resp = await fetch(`http://localhost:8000/students/${id}`);
+        if (resp.ok) {
+          data = await resp.json();
+          var grades = data.grades;
+          grades.forEach((element) => {
+            if (element._id == gradeId) {
+              console.log(inputValue);
+              element.grade = inputValue;
+            }
+          });
+        }
+
+        var resp2 = await fetch(`http://localhost:8000/students/${id}`, {
+          method: "put",
+          body: JSON.stringify(data),
+          headers: { "content-type": "application/json" },
+        });
+        location.reload();
+      }
+      async function createGrade() {
+        var grade = document.getElementById("gradeLbl").value;
+        var date = document.getElementById("dateLbl").value;
+        var data;
+
+        var resp = await fetch(`http://localhost:8000/students/${id}`);
+        if (resp.ok) {
+          data = await resp.json();
+          data.grades.push({ date, grade });
+        }
+
+        var resp2 = await fetch(`http://localhost:8000/students/${id}`, {
+          method: "put",
+          body: JSON.stringify(data),
+          headers: { "content-type": "application/json" },
+        });
+        location.reload();
+      }
+    </script>
+  </body>
+</html>
